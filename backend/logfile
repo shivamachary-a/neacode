@@ -1,0 +1,52 @@
+2020-12-25 23:29:57.960 GMT [9937] LOG:  starting PostgreSQL 13.1 on x86_64-apple-darwin20.1.0, compiled by Apple clang version 12.0.0 (clang-1200.0.32.27), 64-bit
+2020-12-25 23:29:57.962 GMT [9937] LOG:  could not bind IPv6 address "::1": Address already in use
+2020-12-25 23:29:57.962 GMT [9937] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2020-12-25 23:29:57.962 GMT [9937] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2020-12-25 23:29:57.962 GMT [9937] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2020-12-25 23:29:57.962 GMT [9937] WARNING:  could not create listen socket for "localhost"
+2020-12-25 23:29:57.962 GMT [9937] FATAL:  could not create any TCP/IP sockets
+2020-12-25 23:29:57.963 GMT [9937] LOG:  database system is shut down
+2020-12-25 23:30:18.444 GMT [9965] LOG:  starting PostgreSQL 13.1 on x86_64-apple-darwin20.1.0, compiled by Apple clang version 12.0.0 (clang-1200.0.32.27), 64-bit
+2020-12-25 23:30:18.446 GMT [9965] LOG:  could not bind IPv6 address "::1": Address already in use
+2020-12-25 23:30:18.446 GMT [9965] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2020-12-25 23:30:18.446 GMT [9965] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2020-12-25 23:30:18.446 GMT [9965] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2020-12-25 23:30:18.446 GMT [9965] WARNING:  could not create listen socket for "localhost"
+2020-12-25 23:30:18.446 GMT [9965] FATAL:  could not create any TCP/IP sockets
+2020-12-25 23:30:18.447 GMT [9965] LOG:  database system is shut down
+2020-12-25 23:31:16.415 GMT [10290] LOG:  starting PostgreSQL 13.1 on x86_64-apple-darwin20.1.0, compiled by Apple clang version 12.0.0 (clang-1200.0.32.27), 64-bit
+2020-12-25 23:31:16.417 GMT [10290] LOG:  listening on IPv6 address "::1", port 5432
+2020-12-25 23:31:16.417 GMT [10290] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2020-12-25 23:31:16.418 GMT [10290] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2020-12-25 23:31:16.422 GMT [10291] LOG:  database system was shut down at 2020-12-25 23:29:50 GMT
+2020-12-25 23:31:16.425 GMT [10290] LOG:  database system is ready to accept connections
+2020-12-25 23:31:32.330 GMT [10302] FATAL:  role "postgres" does not exist
+2020-12-25 23:31:32.336 GMT [10303] FATAL:  role "postgres" does not exist
+2020-12-25 23:31:53.946 GMT [10311] FATAL:  database "isohel" does not exist
+2020-12-25 23:31:53.952 GMT [10312] FATAL:  database "isohel" does not exist
+2020-12-25 23:39:38.523 GMT [10667] ERROR:  relation "stock" does not exist at character 20
+2020-12-25 23:39:38.523 GMT [10667] STATEMENT:  select "e0".* from "stock" as "e0"
+2020-12-25 23:40:56.434 GMT [10687] ERROR:  relation "stock" does not exist at character 13
+2020-12-25 23:40:56.434 GMT [10687] STATEMENT:  insert into "stock" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:40:56.426Z', 'TSLA', '2020-12-25T23:40:56.426Z') returning "id"
+2020-12-25 23:41:47.693 GMT [10697] ERROR:  invalid input syntax for type json at character 68
+2020-12-25 23:41:47.693 GMT [10697] DETAIL:  Expected end of input, but found "-12".
+2020-12-25 23:41:47.693 GMT [10697] CONTEXT:  JSON data, line 1: 2020-12...
+2020-12-25 23:41:47.693 GMT [10697] STATEMENT:  insert into "stock" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:41:47.688Z', 'TSLA', '2020-12-25T23:41:47.688Z') returning "id"
+2020-12-25 23:41:58.276 GMT [10708] ERROR:  invalid input syntax for type json at character 68
+2020-12-25 23:41:58.276 GMT [10708] DETAIL:  Expected end of input, but found "-12".
+2020-12-25 23:41:58.276 GMT [10708] CONTEXT:  JSON data, line 1: 2020-12...
+2020-12-25 23:41:58.276 GMT [10708] STATEMENT:  insert into "stock" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:41:58.272Z', 'TSLA', '2020-12-25T23:41:58.272Z') returning "id"
+2020-12-25 23:48:05.923 GMT [10795] ERROR:  invalid input syntax for type json at character 68
+2020-12-25 23:48:05.923 GMT [10795] DETAIL:  Expected end of input, but found "-12".
+2020-12-25 23:48:05.923 GMT [10795] CONTEXT:  JSON data, line 1: 2020-12...
+2020-12-25 23:48:05.923 GMT [10795] STATEMENT:  insert into "stock" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:48:05.916Z', 'TSLA', '2020-12-25T23:48:05.916Z') returning "id"
+2020-12-25 23:52:00.759 GMT [10862] ERROR:  relation "stocks" does not exist at character 13
+2020-12-25 23:52:00.759 GMT [10862] STATEMENT:  insert into "stocks" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:52:00.751Z', 'TSLA', '2020-12-25T23:52:00.751Z') returning "id"
+2020-12-25 23:52:51.404 GMT [10879] ERROR:  relation "stocks" does not exist at character 13
+2020-12-25 23:52:51.404 GMT [10879] STATEMENT:  insert into "stocks" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:52:51.396Z', 'TSLA', '2020-12-25T23:52:51.396Z') returning "id"
+2020-12-25 23:53:08.214 GMT [10887] ERROR:  relation "stocks" does not exist at character 13
+2020-12-25 23:53:08.214 GMT [10887] STATEMENT:  insert into "stocks" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:53:08.206Z', 'TSLA', '2020-12-25T23:53:08.206Z') returning "id"
+2020-12-25 23:53:51.675 GMT [10906] ERROR:  relation "stocks" does not exist at character 13
+2020-12-25 23:53:51.675 GMT [10906] STATEMENT:  insert into "stocks" ("created_at", "symbol", "updated_at") values ('2020-12-25T23:53:51.668Z', 'TSLA', '2020-12-25T23:53:51.668Z') returning "id"
+2020-12-25 23:56:21.423 GMT [10940] ERROR:  relation "stocks" does not exist at character 13
+2020-12-25 23:56:21.423 GMT [10940] STATEMENT:  insert into "stocks" ("symbol") values ('TSLA') returning "id"

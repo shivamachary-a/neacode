@@ -1,0 +1,12 @@
+query authenticateMonzo($code: String!, $state: String!){
+  authenticateMonzo(code: $code, state: $state){
+    error{
+      field
+      message
+    }
+    user{
+      username
+      id
+    }
+  }
+}

@@ -1,0 +1,9 @@
+overwrite: true
+schema: "http://isohel.co.uk/api/graphql"
+documents: "src/**/*.graphql"
+generates:
+  src/generated/graphql.tsx:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-urql"

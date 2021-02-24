@@ -1,0 +1,11 @@
+query authenticateAlpaca($code: String!, $state: String!) {
+    authenticateAlpaca(code: $code, state: $state) {
+        error {
+            field
+            message
+        }
+        user {
+            isAlpaca
+        }
+    }
+}
