@@ -32,6 +32,7 @@ const User_1 = require("../entities/User");
 const types_1 = require("../types");
 const type_graphql_1 = require("type-graphql");
 const form_data_1 = __importDefault(require("form-data"));
+const Transaction_1 = require("../entities/Transaction");
 let monzoResolver = class monzoResolver {
     getMonzoRedirect({ req }) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -61,9 +62,48 @@ let monzoResolver = class monzoResolver {
                 });
                 balances.push(balanceRes.data.balance);
             }
+            var transactions = [];
+            for (let account of accounts) {
+                const transactionsList = yield em.find(Transaction_1.Transactions, { accountID: account.id });
+                console.log(transactionsList);
+                if (transactionsList.length == 0) {
+                    const balanceRes = yield axios_1.default.get(`https://api.monzo.com/transactions?account_id=${account.id}`, {
+                        headers: {
+                            "Authorization": `Bearer ${user === null || user === void 0 ? void 0 : user.monzoToken}`
+                        }
+                    });
+                    console.log(balanceRes.data);
+                    if (balanceRes.status != 403) {
+                        for (var transaction of balanceRes.data.transactions) {
+                            try {
+                                yield em.nativeInsert(Transaction_1.Transactions, {
+                                    userID: transaction.user_id,
+                                    created: transaction.created,
+                                    description: transaction.description,
+                                    amount: transaction.amount,
+                                    currency: transaction.currency,
+                                    category: transaction.category,
+                                    accountID: transaction.account_id
+                                });
+                            }
+                            catch (e) {
+                                console.log(e);
+                            }
+                        }
+                    }
+                    else {
+                        console.log("error");
+                        transactions.push(balanceRes.data);
+                    }
+                }
+                else {
+                    transactions.push(transactionsList);
+                }
+            }
             return {
                 "accounts": accounts,
                 "balances": balances,
+                "transactions": transactions
             };
         });
     }

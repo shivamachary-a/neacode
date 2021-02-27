@@ -119,6 +119,77 @@ let alpacaResolver = class alpacaResolver {
             }
         });
     }
+    getPortfolioHistoryPaper({ req, em }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield em.findOne(User_1.Users, { id: req.session.userID });
+            if (!user) {
+                return {
+                    "Error": "User does not exist"
+                };
+            }
+            else {
+                const response = yield axios_1.default.get("https://paper-api.alpaca.markets/v2/account/portfolio/history", {
+                    headers: {
+                        "Authorization": `Bearer ${user.alpacaToken}`
+                    }
+                });
+                console.log(response.data);
+                var graphingData = [];
+                for (let i = 0; i < response.data.timestamp.length; i++) {
+                    graphingData.push([response.data.timestamp[i], response.data.equity[i]]);
+                }
+                return {
+                    response: graphingData,
+                    maxX: Math.max(response.data.timestamp),
+                    minX: Math.min(response.data.timestamp),
+                    maxY: Math.max(response.data.equity),
+                    minY: Math.min(response.data.equity) - (0.5 * Math.min(response.data.equity))
+                };
+            }
+        });
+    }
+    getPortfolioBars({ req, em }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield em.findOne(User_1.Users, { id: req.session.userID });
+            if (!user) {
+                return {
+                    "Error": "User does not exist"
+                };
+            }
+            else if (user.isAlpaca == false) {
+                return {
+                    "Error": "User is not linked to an Alpaca account"
+                };
+            }
+            else {
+                const positions = yield axios_1.default.get("https://paper-api.alpaca.markets/v2/positions", {
+                    headers: {
+                        "Authorization": `Bearer ${user.alpacaToken}`
+                    }
+                });
+                var symbols = [];
+                for (var asset of positions.data) {
+                    symbols.push(asset.symbol);
+                }
+                var priceHistories = [];
+                var beforedate = new Date();
+                const date = new Date(new Date().setDate(beforedate.getDate() - 30));
+                var symbolString = symbols[0];
+                symbols.splice(0, 1);
+                for (var symbol of symbols) {
+                    symbolString += "," + symbol;
+                }
+                console.log(symbolString);
+                const bars = yield axios_1.default.get(`https://data.alpaca.markets/v1/bars/day?symbols=${symbolString}&limit=10`, {
+                    headers: {
+                        "Authorization": `Bearer ${user.alpacaToken}`
+                    }
+                });
+                console.log(bars.request);
+                return bars.data;
+            }
+        });
+    }
     createWatchlist(name, initialSymbols, { req, em }) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield em.findOne(User_1.Users, { id: req.session.userID });
@@ -252,6 +323,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], alpacaResolver.prototype, "getAlpacaPositionsPaper", null);
 __decorate([
+    type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
+    __param(0, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], alpacaResolver.prototype, "getPortfolioHistoryPaper", null);
+__decorate([
+    type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
+    __param(0, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], alpacaResolver.prototype, "getPortfolioBars", null);
+__decorate([
     type_graphql_1.Mutation(() => graphql_type_json_1.GraphQLJSONObject),
     __param(0, type_graphql_1.Arg('name')),
     __param(1, type_graphql_1.Arg('initialSymbols', type => [String])),
@@ -273,4 +358,9 @@ alpacaResolver = __decorate([
     type_graphql_1.Resolver()
 ], alpacaResolver);
 exports.alpacaResolver = alpacaResolver;
+function getISOStringWithoutSecsAndMillisecs1(date) {
+    const dateAndTime = date.toISOString().split('T');
+    const time = dateAndTime[1].split(':');
+    return dateAndTime[0] + 'T' + time[0] + ':' + time[1] + ':' + time[2].split(".")[0];
+}
 //# sourceMappingURL=alpaca.js.map
