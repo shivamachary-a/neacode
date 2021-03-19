@@ -1,9 +1,12 @@
 import { Users } from "../entities/User";
-import { IsoContext, UserResponse } from "../types";
+import { IsoContext, OrderOptions, UserResponse } from "../types";
 import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
 import { alpaca_client_id, alpaca_client_secret } from "../constants";
 import axios from "axios";
 import { GraphQLJSONObject } from "graphql-type-json";
+import { Asset } from "../entities/Asset";
+
+
 
 
 @Resolver()
@@ -21,6 +24,28 @@ export class alpacaResolver {
     else {
       return `https://app.alpaca.markets/oauth/authorize?response_type=code&client_id=${alpaca_client_id}&redirect_uri=http://isohel.co.uk/redirect/alpaca&state=${user!.id}&scope=account:write%20trading%20data`
     }
+  }
+
+  @Mutation(() => GraphQLJSONObject)
+  async placeOrder(
+    @Ctx() { req, em }: IsoContext,
+    @Arg('options') options: OrderOptions,
+
+  ) {
+    const user = await em.findOne(Users, { id: req.session.userID });
+
+    if (!user) {
+      return {
+        "Error": "User does not exist"
+      }
+    }
+    const response = await axios.post("https://paper-api.alpaca.markets/v2/orders", options, {
+      headers: {
+        "Authorization": `Bearer ${user.alpacaToken}`
+      },
+    })
+    return response.data;
+
   }
 
   @Query(() => GraphQLJSONObject)
@@ -61,24 +86,24 @@ export class alpacaResolver {
       return response.data
     }
   }
-  @Query(() => GraphQLJSONObject)
-  async getAlpacaAssetsPaper(
-    @Ctx() { req, em }: IsoContext
+  @Mutation(() => [Asset])
+  async searchAssets(
+    @Ctx() { req, em }: IsoContext,
+    @Arg('symbol') symbol: string
   ) {
     const user = await em.findOne(Users, { id: req.session.userID });
+
     if (!user) {
       return {
         "Error": "User does not exist"
       }
-    }
-    else {
-      const response = await axios.get("https://paper-api.alpaca.markets/v2/assets", {
-        headers: {
-          "Authorization": `Bearer ${user.alpacaToken}`
-        }
-      })
-      return {
-        response: response.data
+    } else {
+      try {
+        const searchResults = await em.find(Asset, { name_lower: { $re: symbol.toLowerCase() } });
+        return searchResults
+      }
+      catch (e) {
+        return { error: e }
       }
     }
   }
@@ -89,6 +114,7 @@ export class alpacaResolver {
   ) {
     const user = await em.findOne(Users, { id: req.session.userID });
     if (!user) {
+
       return {
         "Error": "User does not exist"
       }
@@ -121,17 +147,21 @@ export class alpacaResolver {
           "Authorization": `Bearer ${user.alpacaToken}`
         }
       })
-      console.log(response.data)
+
       var graphingData = [];
       for (let i = 0; i < response.data.timestamp.length; i++) {
         graphingData.push([response.data.timestamp[i], response.data.equity[i]])
       }
+      var equities: Array<number> = response.data.equity;
+      var timestamps: Array<number> = response.data.timestamp;
       return {
+        rawRes: response.data,
         response: graphingData,
-        maxX: Math.max(response.data.timestamp),
-        minX: Math.min(response.data.timestamp),
-        maxY: Math.max(response.data.equity),
-        minY: Math.min(response.data.equity) - (0.5 * Math.min(response.data.equity))
+        maxX: Math.max(...timestamps),
+        interval: Math.max(...equities) / 10,
+        minX: Math.min(...timestamps),
+        maxY: Math.max(...equities),
+        minY: Math.min(...equities) - (0.5 * Math.min(...equities))
       }
     }
   }
@@ -161,22 +191,20 @@ export class alpacaResolver {
       for (var asset of positions.data) {
         symbols.push(asset.symbol)
       }
-      var priceHistories = [];
-      var beforedate = new Date();
-      const date = new Date(new Date().setDate(beforedate.getDate() - 30))
+
+
       var symbolString = symbols[0]
       symbols.splice(0, 1)
       for (var symbol of symbols) {
         symbolString += "," + symbol
       }
-      console.log(symbolString);
+
 
       const bars = await axios.get(`https://data.alpaca.markets/v1/bars/day?symbols=${symbolString}&limit=10`, {
         headers: {
           "Authorization": `Bearer ${user.alpacaToken}`
         }
       })
-      console.log(bars.request)
       return bars.data
     }
   }
@@ -195,7 +223,7 @@ export class alpacaResolver {
     }
     else {
       if (initialSymbols.length < 1) {
-        const response = await axios.post("https://api.alpaca.markets/v2/watchlists", {
+        const response = await axios.post("https://paper-api.alpaca.markets/v2/watchlists", {
           "name": name
         }, {
           headers: {
@@ -207,7 +235,7 @@ export class alpacaResolver {
         }
       }
       else {
-        const response = await axios.post("https://api.alpaca.markets/v2/watchlists", {
+        const response = await axios.post("https://paper-api.alpaca.markets/v2/watchlists", {
           "name": name,
           "symbols": initialSymbols
         }, {
@@ -219,6 +247,29 @@ export class alpacaResolver {
           response: response.data
         }
       }
+    }
+  }
+
+  @Query(() => GraphQLJSONObject)
+  async stocksNews(
+    @Ctx() { req, em }: IsoContext
+  ) {
+    const user = await em.findOne(Users, { id: req.session.userID });
+    if (!user) {
+      return {
+        "error": "User does not exist"
+      }
+    } else {
+      const response = await axios.get("https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=29f00ea0790d46f59ea1b418da7b9ff0")
+      var toReturn: any = []
+      for (var article of response.data.articles) {
+        if (article.source.name.toLowerCase().includes("business insider") || article.source.name.toLowerCase().includes("journal") || article.source.name.toLowerCase().includes("bloomberg") || article.source.name.toLowerCase().includes("financial")) {
+          toReturn.push(article)
+        }
+      }
+      return {
+        response: toReturn
+      };
     }
   }
 

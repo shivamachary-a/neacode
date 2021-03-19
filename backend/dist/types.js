@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SearchResponse = exports.StockResponse = exports.UserResponse = exports.FieldError = void 0;
+exports.OrderOptions = exports.SearchResponse = exports.StockResponse = exports.UserResponse = exports.FieldError = void 0;
 const type_graphql_1 = require("type-graphql");
 const Stock_1 = require("./entities/Stock");
 const User_1 = require("./entities/User");
@@ -70,4 +70,54 @@ SearchResponse = __decorate([
     type_graphql_1.ObjectType()
 ], SearchResponse);
 exports.SearchResponse = SearchResponse;
+let OrderOptions = class OrderOptions {
+};
+__decorate([
+    type_graphql_1.Field(),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "symbol", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "qty", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "side", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "type", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "time_in_force", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "limit_price", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "stop_price", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "trail_price", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "trail_percent", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", Boolean)
+], OrderOptions.prototype, "extended_hours", void 0);
+__decorate([
+    type_graphql_1.Field(() => String, { nullable: true }),
+    __metadata("design:type", String)
+], OrderOptions.prototype, "order_class", void 0);
+OrderOptions = __decorate([
+    type_graphql_1.InputType()
+], OrderOptions);
+exports.OrderOptions = OrderOptions;
 //# sourceMappingURL=types.js.map

@@ -48,6 +48,9 @@ let monzoResolver = class monzoResolver {
                     "Authorization": `Bearer ${user === null || user === void 0 ? void 0 : user.monzoToken}`,
                 }
             });
+            if (accountsRes.status == 401) {
+                this.monzoRefreshToken({ req, em });
+            }
             var accounts = [];
             for (let account of accountsRes.data.accounts) {
                 accounts.push(account);
@@ -64,6 +67,32 @@ let monzoResolver = class monzoResolver {
             }
             var transactions = [];
             for (let account of accounts) {
+                try {
+                    const trans = yield axios_1.default.get(`https://api.monzo.com/transactions?account_id=${account.id}`, {
+                        headers: {
+                            "Authorization": `Bearer ${user === null || user === void 0 ? void 0 : user.monzoToken}`
+                        }
+                    });
+                    for (var transaction of trans.data.transactions) {
+                        try {
+                            yield em.nativeInsert(Transaction_1.Transactions, {
+                                userID: transaction.user_id,
+                                created: transaction.created,
+                                description: transaction.description,
+                                amount: transaction.amount,
+                                currency: transaction.currency,
+                                category: transaction.category,
+                                accountID: transaction.account_id
+                            });
+                        }
+                        catch (e) {
+                            console.log(e);
+                        }
+                    }
+                }
+                catch (e) {
+                    console.log(e);
+                }
                 const transactionsList = yield em.find(Transaction_1.Transactions, { accountID: account.id });
                 console.log(transactionsList);
                 if (transactionsList.length == 0) {

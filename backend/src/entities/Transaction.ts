@@ -28,7 +28,6 @@ export class Transactions {
     amount!: number;
 
     @Field(() => String)
-    @Index({ options: { sparse: true } })
     @Property()
     created!: string;
 

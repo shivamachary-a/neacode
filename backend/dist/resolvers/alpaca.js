@@ -31,6 +31,7 @@ const type_graphql_1 = require("type-graphql");
 const constants_1 = require("../constants");
 const axios_1 = __importDefault(require("axios"));
 const graphql_type_json_1 = require("graphql-type-json");
+const Asset_1 = require("../entities/Asset");
 let alpacaResolver = class alpacaResolver {
     getAlpacaRedirect({ req, em }) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -41,6 +42,22 @@ let alpacaResolver = class alpacaResolver {
             else {
                 return `https://app.alpaca.markets/oauth/authorize?response_type=code&client_id=${constants_1.alpaca_client_id}&redirect_uri=http://isohel.co.uk/redirect/alpaca&state=${user.id}&scope=account:write%20trading%20data`;
             }
+        });
+    }
+    placeOrder({ req, em }, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield em.findOne(User_1.Users, { id: req.session.userID });
+            if (!user) {
+                return {
+                    "Error": "User does not exist"
+                };
+            }
+            const response = yield axios_1.default.post("https://paper-api.alpaca.markets/v2/orders", options, {
+                headers: {
+                    "Authorization": `Bearer ${user.alpacaToken}`
+                },
+            });
+            return response.data;
         });
     }
     getAlpacaAccount({ req, em }) {
@@ -79,7 +96,7 @@ let alpacaResolver = class alpacaResolver {
             }
         });
     }
-    getAlpacaAssetsPaper({ req, em }) {
+    searchAssets({ req, em }, symbol) {
         return __awaiter(this, void 0, void 0, function* () {
             const user = yield em.findOne(User_1.Users, { id: req.session.userID });
             if (!user) {
@@ -88,14 +105,13 @@ let alpacaResolver = class alpacaResolver {
                 };
             }
             else {
-                const response = yield axios_1.default.get("https://paper-api.alpaca.markets/v2/assets", {
-                    headers: {
-                        "Authorization": `Bearer ${user.alpacaToken}`
-                    }
-                });
-                return {
-                    response: response.data
-                };
+                try {
+                    const searchResults = yield em.find(Asset_1.Asset, { name_lower: { $re: symbol.toLowerCase() } });
+                    return searchResults;
+                }
+                catch (e) {
+                    return { error: e };
+                }
             }
         });
     }
@@ -133,17 +149,20 @@ let alpacaResolver = class alpacaResolver {
                         "Authorization": `Bearer ${user.alpacaToken}`
                     }
                 });
-                console.log(response.data);
                 var graphingData = [];
                 for (let i = 0; i < response.data.timestamp.length; i++) {
                     graphingData.push([response.data.timestamp[i], response.data.equity[i]]);
                 }
+                var equities = response.data.equity;
+                var timestamps = response.data.timestamp;
                 return {
+                    rawRes: response.data,
                     response: graphingData,
-                    maxX: Math.max(response.data.timestamp),
-                    minX: Math.min(response.data.timestamp),
-                    maxY: Math.max(response.data.equity),
-                    minY: Math.min(response.data.equity) - (0.5 * Math.min(response.data.equity))
+                    maxX: Math.max(...timestamps),
+                    interval: Math.max(...equities) / 10,
+                    minX: Math.min(...timestamps),
+                    maxY: Math.max(...equities),
+                    minY: Math.min(...equities) - (0.5 * Math.min(...equities))
                 };
             }
         });
@@ -171,21 +190,16 @@ let alpacaResolver = class alpacaResolver {
                 for (var asset of positions.data) {
                     symbols.push(asset.symbol);
                 }
-                var priceHistories = [];
-                var beforedate = new Date();
-                const date = new Date(new Date().setDate(beforedate.getDate() - 30));
                 var symbolString = symbols[0];
                 symbols.splice(0, 1);
                 for (var symbol of symbols) {
                     symbolString += "," + symbol;
                 }
-                console.log(symbolString);
                 const bars = yield axios_1.default.get(`https://data.alpaca.markets/v1/bars/day?symbols=${symbolString}&limit=10`, {
                     headers: {
                         "Authorization": `Bearer ${user.alpacaToken}`
                     }
                 });
-                console.log(bars.request);
                 return bars.data;
             }
         });
@@ -200,7 +214,7 @@ let alpacaResolver = class alpacaResolver {
             }
             else {
                 if (initialSymbols.length < 1) {
-                    const response = yield axios_1.default.post("https://api.alpaca.markets/v2/watchlists", {
+                    const response = yield axios_1.default.post("https://paper-api.alpaca.markets/v2/watchlists", {
                         "name": name
                     }, {
                         headers: {
@@ -212,7 +226,7 @@ let alpacaResolver = class alpacaResolver {
                     };
                 }
                 else {
-                    const response = yield axios_1.default.post("https://api.alpaca.markets/v2/watchlists", {
+                    const response = yield axios_1.default.post("https://paper-api.alpaca.markets/v2/watchlists", {
                         "name": name,
                         "symbols": initialSymbols
                     }, {
@@ -224,6 +238,28 @@ let alpacaResolver = class alpacaResolver {
                         response: response.data
                     };
                 }
+            }
+        });
+    }
+    stocksNews({ req, em }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield em.findOne(User_1.Users, { id: req.session.userID });
+            if (!user) {
+                return {
+                    "error": "User does not exist"
+                };
+            }
+            else {
+                const response = yield axios_1.default.get("https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=29f00ea0790d46f59ea1b418da7b9ff0");
+                var toReturn = [];
+                for (var article of response.data.articles) {
+                    if (article.source.name.toLowerCase().includes("business insider") || article.source.name.toLowerCase().includes("journal") || article.source.name.toLowerCase().includes("bloomberg") || article.source.name.toLowerCase().includes("financial")) {
+                        toReturn.push(article);
+                    }
+                }
+                return {
+                    response: toReturn
+                };
             }
         });
     }
@@ -295,6 +331,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], alpacaResolver.prototype, "getAlpacaRedirect", null);
 __decorate([
+    type_graphql_1.Mutation(() => graphql_type_json_1.GraphQLJSONObject),
+    __param(0, type_graphql_1.Ctx()),
+    __param(1, type_graphql_1.Arg('options')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, types_1.OrderOptions]),
+    __metadata("design:returntype", Promise)
+], alpacaResolver.prototype, "placeOrder", null);
+__decorate([
     type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
     __param(0, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
@@ -309,12 +353,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], alpacaResolver.prototype, "getAlpacaAccountPaper", null);
 __decorate([
-    type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
+    type_graphql_1.Mutation(() => [Asset_1.Asset]),
     __param(0, type_graphql_1.Ctx()),
+    __param(1, type_graphql_1.Arg('symbol')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
-], alpacaResolver.prototype, "getAlpacaAssetsPaper", null);
+], alpacaResolver.prototype, "searchAssets", null);
 __decorate([
     type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
     __param(0, type_graphql_1.Ctx()),
@@ -345,6 +390,13 @@ __decorate([
     __metadata("design:paramtypes", [String, Array, Object]),
     __metadata("design:returntype", Promise)
 ], alpacaResolver.prototype, "createWatchlist", null);
+__decorate([
+    type_graphql_1.Query(() => graphql_type_json_1.GraphQLJSONObject),
+    __param(0, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], alpacaResolver.prototype, "stocksNews", null);
 __decorate([
     type_graphql_1.Query(() => types_1.UserResponse),
     __param(0, type_graphql_1.Arg('code')),

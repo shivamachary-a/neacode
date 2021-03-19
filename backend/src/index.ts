@@ -9,21 +9,19 @@ import microConfig from './mikro-orm.config';
 import { userResolver } from './resolvers/users';
 import { IsoContext } from './types';
 import { stockResolver } from './resolvers/stocks';
-import Redis  from 'ioredis'
+
 import { monzoResolver } from './resolvers/monzo';
 import { alpacaResolver } from './resolvers/alpaca';
+import axios from 'axios';
+import { Asset } from './entities/Asset';
 
 const main = async () => {
     const orm = await MikroORM.init(microConfig)
+    const schedule = require('node-schedule');
     const app = express();
     orm.em.getDriver().createCollections()
 
-    const redis = new Redis({
-        port: 6379, // Redis port
-        host: "127.0.0.1", // Redis host
-        family: 4,
-        db: 0,
-      });
+
     const MongoStore = require('connect-mongo')(session);
     const mongoose = require('mongoose');
     const connection = mongoose.createConnection('mongodb+srv://shivam:Shivam99@cluster0.ndeux.mongodb.net/isohel?retryWrites=true&w=majority', {
@@ -34,12 +32,12 @@ const main = async () => {
     const slowDown = require("express-slow-down");
 
     app.enable("trust proxy");
-     // only if you're behind a reverse proxy (Heroku, Bluemix, AWS if you use an ELB, custom Nginx setup, etc)
+    // only if you're behind a reverse proxy (Heroku, Bluemix, AWS if you use an ELB, custom Nginx setup, etc)
 
     const speedLimiter = slowDown({
-    windowMs: 1000, // 1 second
-    delayAfter: 2, // allow 100 requests per second
-    delayMs: 500 // begin adding 500ms of delay per request above 5.
+        windowMs: 1000, // 1 second
+        delayAfter: 2, // allow 100 requests per second
+        delayMs: 500 // begin adding 500ms of delay per request above 5.
     });
 
     //  apply to all requests
@@ -61,11 +59,12 @@ const main = async () => {
             sameSite: 'lax',
             secure: _prod_,
         },
-        store: new MongoStore({ mongooseConnection: connection,//storing sessions
+        store: new MongoStore({
+            mongooseConnection: connection,//storing sessions
             ttl: 7 * 24 * 60 * 60,
             collection: 'sessions',
         }),
-        resave: false, 
+        resave: false,
     }));
 
     const apolloServer = new ApolloServer({
@@ -73,15 +72,44 @@ const main = async () => {
             resolvers: [userResolver, stockResolver, monzoResolver, alpacaResolver],
             validate: false,
         }),
-        context: ({req, res}): IsoContext => ({ em: orm.em, req, res, redis: redis})
+        context: ({ req, res }): IsoContext => ({ em: orm.em, req, res })
     });
 
-    apolloServer.applyMiddleware({app, cors: false});
+    apolloServer.applyMiddleware({ app, cors: false });
 
     app.get('/', (req, res) => {
         res.send('Hello World!')
-      })
+    })
 
+    schedule.scheduleJob('30 * * * *', async function () {
+        const response = await axios.get("https://paper-api.alpaca.markets/v2/assets", {
+            headers: {
+                "APCA-API-KEY-ID": "PKGZOZFKBCT9CK5VEUMK",
+                "APCA-API-SECRET-KEY": "6LYLnFqBRAd83Ldv0cyQxYopCnc8GqZWkctvLdbH"
+            }
+        })
+        for (var asset of response.data) {
+            try {
+                orm.em.nativeInsert(Asset, {
+
+                    class: asset.class,
+                    exchange: asset.exchange,
+                    symbol: asset.symbol,
+                    name: asset.name,
+                    name_lower: asset.name.toLowerCase(),
+                    tradable: asset.tradable,
+                    marginable: asset.marginable,
+                    shortable: asset.shortable,
+                    easy_to_borrow: asset.easy_to_borrow
+                })
+            }
+            catch (err) {
+                if (err.toString().includes('duplicate')) {
+                    continue;
+                }
+            }
+        }
+    })
     app.listen(5000, () => {
         console.log('Server listening on port 5000.')
     });

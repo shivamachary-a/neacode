@@ -22,19 +22,15 @@ const constants_1 = require("./constants");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
 const users_1 = require("./resolvers/users");
 const stocks_1 = require("./resolvers/stocks");
-const ioredis_1 = __importDefault(require("ioredis"));
 const monzo_1 = require("./resolvers/monzo");
 const alpaca_1 = require("./resolvers/alpaca");
+const axios_1 = __importDefault(require("axios"));
+const Asset_1 = require("./entities/Asset");
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
     const orm = yield core_1.MikroORM.init(mikro_orm_config_1.default);
+    const schedule = require('node-schedule');
     const app = express_1.default();
     orm.em.getDriver().createCollections();
-    const redis = new ioredis_1.default({
-        port: 6379,
-        host: "127.0.0.1",
-        family: 4,
-        db: 0,
-    });
     const MongoStore = require('connect-mongo')(express_session_1.default);
     const mongoose = require('mongoose');
     const connection = mongoose.createConnection('mongodb+srv://shivam:Shivam99@cluster0.ndeux.mongodb.net/isohel?retryWrites=true&w=majority', {
@@ -64,7 +60,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             sameSite: 'lax',
             secure: constants_1._prod_,
         },
-        store: new MongoStore({ mongooseConnection: connection,
+        store: new MongoStore({
+            mongooseConnection: connection,
             ttl: 7 * 24 * 60 * 60,
             collection: 'sessions',
         }),
@@ -75,11 +72,41 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             resolvers: [users_1.userResolver, stocks_1.stockResolver, monzo_1.monzoResolver, alpaca_1.alpacaResolver],
             validate: false,
         }),
-        context: ({ req, res }) => ({ em: orm.em, req, res, redis: redis })
+        context: ({ req, res }) => ({ em: orm.em, req, res })
     });
     apolloServer.applyMiddleware({ app, cors: false });
     app.get('/', (req, res) => {
         res.send('Hello World!');
+    });
+    schedule.scheduleJob('30 * * * *', function () {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield axios_1.default.get("https://paper-api.alpaca.markets/v2/assets", {
+                headers: {
+                    "APCA-API-KEY-ID": "PKGZOZFKBCT9CK5VEUMK",
+                    "APCA-API-SECRET-KEY": "6LYLnFqBRAd83Ldv0cyQxYopCnc8GqZWkctvLdbH"
+                }
+            });
+            for (var asset of response.data) {
+                try {
+                    orm.em.nativeInsert(Asset_1.Asset, {
+                        class: asset.class,
+                        exchange: asset.exchange,
+                        symbol: asset.symbol,
+                        name: asset.name,
+                        name_lower: asset.name.toLowerCase(),
+                        tradable: asset.tradable,
+                        marginable: asset.marginable,
+                        shortable: asset.shortable,
+                        easy_to_borrow: asset.easy_to_borrow
+                    });
+                }
+                catch (err) {
+                    if (err.toString().includes('duplicate')) {
+                        continue;
+                    }
+                }
+            }
+        });
     });
     app.listen(5000, () => {
         console.log('Server listening on port 5000.');

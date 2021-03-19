@@ -28,6 +28,9 @@ export class monzoResolver {
                 "Authorization": `Bearer ${user?.monzoToken}`,
             }
         });
+        if (accountsRes.status == 401) {
+            this.monzoRefreshToken({ req, em } as IsoContext);
+        }
         var accounts = [];
         for (let account of accountsRes.data.accounts) {
             accounts.push(account)
@@ -43,6 +46,32 @@ export class monzoResolver {
         }
         var transactions: any = [];
         for (let account of accounts) {
+            try {
+                const trans = await axios.get(`https://api.monzo.com/transactions?account_id=${account.id}`, {
+                    headers: {
+                        "Authorization": `Bearer ${user?.monzoToken}`
+                    }
+                })
+                for (var transaction of trans.data.transactions) {
+
+                    try {
+                        await em.nativeInsert(Transactions, {
+                            userID: transaction.user_id,
+                            created: transaction.created,
+                            description: transaction.description,
+                            amount: transaction.amount,
+                            currency: transaction.currency,
+                            category: transaction.category,
+                            accountID: transaction.account_id
+                        })
+                    } catch (e) {
+                        console.log(e);
+                    }
+
+                }
+            } catch (e) {
+                console.log(e)
+            }
             const transactionsList = await em.find(Transactions, { accountID: account.id })
             console.log(transactionsList);
             if (transactionsList.length == 0) {

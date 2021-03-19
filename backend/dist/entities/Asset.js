@@ -9,66 +9,86 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Transactions = void 0;
+exports.Asset = void 0;
 const core_1 = require("@mikro-orm/core");
 const mongodb_1 = require("mongodb");
 const type_graphql_1 = require("type-graphql");
-let Transactions = class Transactions {
+let Asset = class Asset {
 };
 __decorate([
     type_graphql_1.Field(() => String),
     core_1.PrimaryKey(),
     __metadata("design:type", mongodb_1.ObjectID)
-], Transactions.prototype, "_id", void 0);
+], Asset.prototype, "_id", void 0);
 __decorate([
     type_graphql_1.Field(),
     core_1.SerializedPrimaryKey(),
     __metadata("design:type", String)
-], Transactions.prototype, "id", void 0);
+], Asset.prototype, "id", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
+    type_graphql_1.Field(),
     core_1.Index({ options: { sparse: true } }),
     core_1.Property(),
     __metadata("design:type", String)
-], Transactions.prototype, "userID", void 0);
+], Asset.prototype, "class", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
+    type_graphql_1.Field(),
     core_1.Index({ options: { sparse: true } }),
     core_1.Property(),
     __metadata("design:type", String)
-], Transactions.prototype, "description", void 0);
+], Asset.prototype, "exchange", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
-    core_1.Index({ options: { sparse: true } }),
-    core_1.Property(),
-    __metadata("design:type", Number)
-], Transactions.prototype, "amount", void 0);
-__decorate([
-    type_graphql_1.Field(() => String),
+    type_graphql_1.Field(),
     core_1.Property(),
     __metadata("design:type", String)
-], Transactions.prototype, "created", void 0);
+], Asset.prototype, "symbol", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
-    core_1.Index({ options: { sparse: true } }),
+    type_graphql_1.Field(),
     core_1.Property(),
+    core_1.Unique(),
+    core_1.Index({ type: 'text' }),
     __metadata("design:type", String)
-], Transactions.prototype, "currency", void 0);
+], Asset.prototype, "name", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
-    core_1.Index({ options: { sparse: true } }),
+    type_graphql_1.Field(),
     core_1.Property(),
+    core_1.Unique(),
+    core_1.Index({ type: 'text' }),
     __metadata("design:type", String)
-], Transactions.prototype, "category", void 0);
+], Asset.prototype, "name_lower", void 0);
 __decorate([
-    type_graphql_1.Field(() => String),
+    type_graphql_1.Field(),
     core_1.Index({ options: { sparse: true } }),
     core_1.Property(),
     __metadata("design:type", String)
-], Transactions.prototype, "accountID", void 0);
-Transactions = __decorate([
+], Asset.prototype, "status", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    core_1.Index({ options: { sparse: true } }),
+    core_1.Property(),
+    __metadata("design:type", Boolean)
+], Asset.prototype, "tradable", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    core_1.Index({ options: { sparse: true } }),
+    core_1.Property(),
+    __metadata("design:type", Boolean)
+], Asset.prototype, "marginable", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    core_1.Index({ options: { sparse: true } }),
+    core_1.Property(),
+    __metadata("design:type", Boolean)
+], Asset.prototype, "shortable", void 0);
+__decorate([
+    type_graphql_1.Field(),
+    core_1.Index({ options: { sparse: true } }),
+    core_1.Property(),
+    __metadata("design:type", Boolean)
+], Asset.prototype, "easy_to_borrow", void 0);
+Asset = __decorate([
     type_graphql_1.ObjectType(),
     core_1.Entity()
-], Transactions);
-exports.Transactions = Transactions;
-//# sourceMappingURL=Transaction.js.map
+], Asset);
+exports.Asset = Asset;
+//# sourceMappingURL=Asset.js.map
